@@ -1,0 +1,92 @@
+local playerService = game:service'Players';
+local localPlayer = playerService.LocalPlayer;
+ 
+local set_thread_identity = (typeof(syn) == "table" and syn.set_thread_identity) or (setidentity or setthreadcontext);
+local hookfunc = (replaceclosure or hookfunction);
+ 
+if (not set_thread_identity or not hookfunc) then
+    return localPlayer:Kick("unsupported exploit");
+end;
+ 
+local function bypassFunc()
+    repeat
+        wait();
+    until (localPlayer.Character and localPlayer.Character:FindFirstChild("Interaction Handler"));
+ 
+    wait(2);
+ 
+    set_thread_identity(2);
+ 
+    local getTextFunc = rawget(rawget(require(localPlayer.Character["Interaction Handler"].InteractionActions), "Locker"), "GetText");
+ 
+    set_thread_identity(7);
+ 
+    if (not getTextFunc) then
+        for i, v in next, getgc() do
+            if (typeof(v) ~= "function") then continue end;
+ 
+            if (getinfo(v).name == "GetText") then
+                getTextFunc = v;
+                break;
+            end;
+        end;
+ 
+        if (not getTextFunc) then
+            return localPlayer:Kick("Ban prevention!");
+        end;
+    end;
+ 
+    local tfunc, upvnum;
+    for i, v in next, getupvalues(getTextFunc) do
+        if (typeof(v) ~= "function" or not islclosure(v)) then continue end;
+ 
+        upvnum = i;
+        if (#getinfo(v).name == 1 and getinfo(v).nups == 9) then
+            tfunc = v;
+            break;
+        end;
+    end;
+ 
+    if (not tfunc) then
+        f, tfunc = pcall(getupvalue, getTextFunc, upvnum);
+        if (not f or typeof(tfunc) ~= "function" or #getinfo(tfunc).name ~= 1) then
+            return localPlayer:Kick("Ban prevention!")
+        end
+    end;
+ 
+    local debug_info = debug.info;
+    local old_q;old_q = hookfunc(tfunc, function(...)
+        local ret = old_q(...);
+        return function(t, v, ...)
+            if (not debug_info(2, "f") and not t and not v) then
+                return;
+            end;
+            return ret(t, v, ...); 
+        end;
+    end);
+end;
+ 
+local Success, Result = pcall(bypassFunc);
+if (not Success) then
+    return localPlayer:Kick("Ban prevention!")
+end;
+ 
+localPlayer.CharacterAdded:Connect(bypassFunc);
+ 
+if (Drawing) then
+    local function Draw(Class, Props) 
+        local n = Drawing.new(Class);
+        for i, v in next, Props do
+            n[i] = v;
+        end;
+        return n;
+    end;
+ 
+    Draw("Text", {
+        Color = Color3.new(1, 1, 1);
+        Position = Vector2.new((workspace.CurrentCamera.ViewportSize.X / 2.5), 5);
+        Size = 20;
+        Text = "anticheat bypasser made by cnnn > https://parr0t.xyz/discord";
+        Visible = false
+    })
+end
